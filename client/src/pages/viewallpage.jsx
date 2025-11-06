@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import "./viewallpage.css";
 
 export default function ViewAllPage() {
   const [recipes, setRecipes] = useState(null);
@@ -21,7 +22,20 @@ export default function ViewAllPage() {
         const res = await fetch(`${devBase}/api/recipes`);
         if (!res.ok) throw new Error(await res.text());
         const json = await res.json();
-        if (!cancelled) setRecipes(json || []);
+        if (!cancelled) {
+          // Sort newest first. Prefer created_at timestamp if present,
+          // otherwise fall back to numeric id descending.
+          const list = (json || []).slice().sort((a, b) => {
+            if (a.created_at && b.created_at) {
+              return new Date(b.created_at) - new Date(a.created_at);
+            }
+            if (typeof b.id === "number" && typeof a.id === "number") {
+              return b.id - a.id;
+            }
+            return 0;
+          });
+          setRecipes(list);
+        }
       } catch (err) {
         if (!cancelled) setError(String(err));
       } finally {
@@ -51,19 +65,16 @@ export default function ViewAllPage() {
       )}
 
       {!loading && !error && Array.isArray(recipes) && recipes.length > 0 && (
-        <div style={{ display: "grid", gap: 12 }}>
+        <div className="recipes-grid">
           {recipes.map((r) => (
-            <div
-              key={r.id}
-              style={{ padding: 12, border: "1px solid #eee", borderRadius: 6 }}
-            >
-              <h3 style={{ margin: 0 }}>{r.title}</h3>
-              <div style={{ color: "#666", fontSize: 13 }}>{r.description}</div>
-              <div style={{ marginTop: 8, fontSize: 13, color: "#444" }}>
+            <div key={r.id} className="recipe-card">
+              <h3 className="recipe-title">{r.title}</h3>
+              <div className="recipe-desc">{r.description}</div>
+              <div className="recipe-meta">
                 Servings: {r.servings ?? "-"} · Prep: {r.prep_time ?? "-"} min ·
                 Cook: {r.cook_time ?? "-"} min
               </div>
-              <div style={{ marginTop: 8 }}>
+              <div className="view-link">
                 <a href={`/recipes/${r.id}`}>View</a>
               </div>
             </div>
