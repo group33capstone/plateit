@@ -1,0 +1,19 @@
+{
+  "name": "plateit-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "reset": "node config/createTables.js",
+    "create-tables": "node config/createTables.js"
+  },
+  "dependencies": {
+    "@google-ai/generativelanguage": "^3.5.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "google-auth-library": "^10.4.2"
+  }
+}
