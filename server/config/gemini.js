@@ -1,4 +1,4 @@
-// Implementation for the Gemini proxy (copied from giminiproxy.js)
+// Implementation for the Gemini LLM endpoint
 export async function generate(req, ENV = {}) {
   const GOOGLE_API_KEY = ENV.GOOGLE_API_KEY || ENV.GOOGLE_KEY;
 

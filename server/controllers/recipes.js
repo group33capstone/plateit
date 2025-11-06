@@ -49,6 +49,60 @@ const createRecipe = async (req, res) => {
   try {
     await client.query("BEGIN");
 
+    // Helpers: parse quantities like "1/2", "1 1/2", or unicode fractions (½) into decimals
+    const parseQuantity = (val) => {
+      if (val == null) return null;
+      if (typeof val === "number") return Number.isFinite(val) ? val : null;
+      let s = String(val).trim();
+      if (!s) return null;
+
+      // map common unicode vulgar fractions to ascii
+      const unicodeMap = {
+        "½": "1/2",
+        "⅓": "1/3",
+        "⅔": "2/3",
+        "¼": "1/4",
+        "¾": "3/4",
+        "⅛": "1/8",
+      };
+      s = s.replace(/[¼½¾⅓⅔⅛]/g, (m) => unicodeMap[m] || m);
+
+      // handle mixed numbers like "1 1/2"
+      const mixedMatch = s.match(/^\s*(\d+)\s+(\d+)\/(\d+)\s*$/);
+      if (mixedMatch) {
+        const whole = Number(mixedMatch[1]);
+        const num = Number(mixedMatch[2]);
+        const den = Number(mixedMatch[3]);
+        if (den === 0) return null;
+        return whole + num / den;
+      }
+
+      // simple fraction like "1/2"
+      const fracMatch = s.match(
+        /^\s*(-?\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)\s*$/
+      );
+      if (fracMatch) {
+        const num = Number(fracMatch[1]);
+        const den = Number(fracMatch[2]);
+        if (!Number.isFinite(num) || !Number.isFinite(den) || den === 0)
+          return null;
+        return num / den;
+      }
+
+      // fallback: extract first number (handles "0.5", "1.5", "1.0")
+      const numMatch = s.match(/-?\d+(?:\.\d+)?/);
+      if (numMatch) return Number(numMatch[0]);
+      return null;
+    };
+
+    const parseTimeNumber = (v, fallback = 0) => {
+      if (v == null) return fallback;
+      if (typeof v === "number") return Number.isFinite(v) ? v : fallback;
+      const s = String(v);
+      const m = s.match(/(\d+(?:\.\d+)?)/);
+      return m ? Number(m[1]) : fallback;
+    };
+
     // 1) Upsert ingredients
     const ingredientNames = Array.isArray(payload.ingredients)
       ? [...new Set(payload.ingredients.map((i) => String(i.name).trim()))]
@@ -79,8 +133,8 @@ const createRecipe = async (req, res) => {
       r.title || "Untitled",
       r.description || "",
       r.servings ?? 1,
-      r.prep_time ?? 0,
-      r.cook_time ?? 0,
+      parseTimeNumber(r.prep_time ?? r.prepTime, 0),
+      parseTimeNumber(r.cook_time ?? r.cookTime, 0),
       r.image_url || null,
     ];
     const recipeResult = await client.query(
@@ -110,10 +164,19 @@ const createRecipe = async (req, res) => {
       const ingredient_id =
         ri.ingredient_id ?? (ingName ? nameToId[ingName] : null);
       const text = `INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity, unit, preparation, "order") VALUES ($1,$2,$3,$4,$5,$6)`;
+      const parsedQty = parseQuantity(ri.quantity);
+      // debug log if parsing failed or original looks non-numeric
+      if (parsedQty === null && ri.quantity != null) {
+        console.warn("createRecipe: could not parse quantity", {
+          original: ri.quantity,
+          ingredient: ingName,
+        });
+      }
       const values = [
         recipeId,
         ingredient_id,
-        ri.quantity ?? null,
+        // sanitize quantity to numeric or null
+        parsedQty,
         ri.unit ?? null,
         ri.preparation ?? null,
         ri.order ?? null,

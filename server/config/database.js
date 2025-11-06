@@ -1,4 +1,4 @@
-import pg from "pg";
+import { Pool } from "pg";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -9,16 +9,13 @@ const __dirname = path.dirname(__filename);
 const envPath = path.join(__dirname, "..", "..", ".env");
 dotenv.config({ path: envPath });
 
-const { Pool } = pg;
-
-// Only enable SSL when the environment indicates it (e.g. PGSSLMODE or a non-local host).
-const shouldUseSsl = (() => {
-  const host = process.env.PGHOST || "";
-  const pgsslmode = (process.env.PGSSLMODE || "").toLowerCase();
-  if (pgsslmode === "disable" || host.includes("localhost") || host === "")
-    return false;
-  return true;
-})();
+// Decide SSL config: enabled unless PGSSLMODE=disable or host looks local/empty.
+const host = process.env.PGHOST || "";
+const pgsslmode = (process.env.PGSSLMODE || "").toLowerCase();
+const ssl =
+  pgsslmode === "disable" || host === "" || host.includes("localhost")
+    ? false
+    : { rejectUnauthorized: false };
 
 const pool = new Pool({
   user: process.env.PGUSER,
@@ -26,7 +23,7 @@ const pool = new Pool({
   database: process.env.PGDATABASE,
   password: process.env.PGPASSWORD,
   port: process.env.PGPORT,
-  ssl: shouldUseSsl ? { rejectUnauthorized: false } : false,
+  ssl,
 });
 
 // Export both a named and default export so callers can import either style.
