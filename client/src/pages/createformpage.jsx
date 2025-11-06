@@ -6,11 +6,7 @@ export default function FormPage() {
   const [modelId, setModelId] = useState("gemini-2.0-flash");
   const [textBusy, setTextBusy] = useState(false);
 
-  const [responseText, setResponseText] = useState("");
-  const [responseIsJson, setResponseIsJson] = useState(false);
   const [error, setError] = useState(null);
-  const [structuredFlag, setStructuredFlag] = useState(false);
-  const [asRecipeFlag, setAsRecipeFlag] = useState(false);
   const [structuredResult, setStructuredResult] = useState(null);
   const [savePayload, setSavePayload] = useState(null);
   const [saveStatus, setSaveStatus] = useState(null);
@@ -21,7 +17,6 @@ export default function FormPage() {
     e && e.preventDefault && e.preventDefault();
     setTextBusy(true);
     setError(null);
-    setResponseText("");
     try {
       const result = await generateText({
         model: modelId,
@@ -31,19 +26,18 @@ export default function FormPage() {
           question,
           model: modelId,
         },
-        structured: structuredFlag || asRecipeFlag,
-        asRecipe: asRecipeFlag,
+        // always request structured recipe output
+        structured: true,
+        asRecipe: true,
       });
 
       if (!result.ok) {
         setError(result.error || "Unknown error");
       } else {
-        setResponseIsJson(Boolean(result.isJson));
-        setResponseText(result.respText || "");
-        setStructuredResult(result.structured || null);
-        setSavePayload(
-          result.structured ? buildSavePayload(result.structured) : null
-        );
+        const structured = result.structured || null;
+        setStructuredResult(structured);
+        setSavePayload(structured ? buildSavePayload(structured) : null);
+        setSaveStatus(null);
       }
     } finally {
       setTextBusy(false);
@@ -74,25 +68,7 @@ export default function FormPage() {
             onChange={(e) => setQuestion(e.target.value)}
           />
         </label>
-        <label style={{ display: "block", marginTop: 6 }}>
-          <input
-            type="checkbox"
-            checked={structuredFlag}
-            onChange={(e) => setStructuredFlag(e.target.checked)}
-            style={{ marginRight: 6 }}
-          />
-          Request structured recipe
-        </label>
-
-        <label style={{ display: "block", marginTop: 6 }}>
-          <input
-            type="checkbox"
-            checked={asRecipeFlag}
-            onChange={(e) => setAsRecipeFlag(e.target.checked)}
-            style={{ marginRight: 6 }}
-          />
-          Generate recipe from ingredients (auto-prompt)
-        </label>
+        {/* always generate a structured recipe from the provided ingredients */}
 
         <div>
           <button type="submit" disabled={textBusy}>
@@ -109,47 +85,23 @@ export default function FormPage() {
         </div>
       )}
 
-      {responseText && (
+      {structuredResult && (
         <div
           style={{
             marginTop: 10,
             padding: 10,
             border: "1px solid #ddd",
+            maxWidth: 900,
+            overflowX: "auto",
           }}
         >
-          <strong>Response</strong>
-          <div style={{ marginTop: 8 }}>
-            {responseIsJson ? (
-              <pre style={{ whiteSpace: "pre-wrap", fontSize: 13 }}>
-                {responseText}
-              </pre>
-            ) : (
-              <div style={{ whiteSpace: "pre-wrap" }}>{responseText}</div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Debug: show structured response and save payload when requested */}
-      {structuredFlag && (
-        <div style={{ marginTop: 10, padding: 10, border: "1px solid #eee" }}>
           <strong>Structured response</strong>
           <div style={{ marginTop: 8 }}>
             <pre style={{ whiteSpace: "pre-wrap", fontSize: 13 }}>
               {JSON.stringify(structuredResult, null, 2)}
             </pre>
           </div>
-
-          <strong style={{ marginTop: 8, display: "block" }}>
-            Save payload
-          </strong>
-          <div style={{ marginTop: 8 }}>
-            <pre style={{ whiteSpace: "pre-wrap", fontSize: 13 }}>
-              {JSON.stringify(savePayload, null, 2)}
-            </pre>
-          </div>
-
-          <div style={{ marginTop: 10 }}>
+          <div style={{ marginTop: 12 }}>
             <button
               disabled={!savePayload}
               onClick={async () => {
@@ -170,7 +122,6 @@ export default function FormPage() {
                   try {
                     j = await res.json();
                   } catch {
-                    // response was not JSON
                     j = null;
                   }
                   if (!res.ok) {

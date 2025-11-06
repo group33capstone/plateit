@@ -1,4 +1,4 @@
-// Utility to call the GenAI proxy and return a normalized response.
+// Utility to call the GenAI proxy and return a structured response.
 export async function generateText({
   model,
   question,
@@ -7,13 +7,20 @@ export async function generateText({
   asRecipe = false,
 } = {}) {
   try {
-    // If caller requests recipe generation, wrap the ingredients into a
+    // If user requests recipe generation, wrap the ingredients into a
     // deterministic prompt instructing the model to return a JSON recipe.
     let promptText = String(question || "");
     if (asRecipe) {
       // Ensure we request structured output
       structured = true;
-      const prompt = `You are a helpful, precise chef. Given the list of ingredients, produce a single valid JSON object ONLY (no extra text) with the following top-level keys: recipe, ingredients, recipe_ingredients, steps, tags.\n- recipe should contain title, description, servings, prep_time, cook_time, image_url.\n- ingredients should be an array of objects with name.\n- recipe_ingredients should be an array mapping ingredient_name to quantity, unit, preparation and order.\n- steps should be an array of {step_number, instruction}.\n- tags should be an array of {name}.\nReturn parsable JSON only.\n\nIngredients:`;
+      const prompt = `You are a helpful, precise chef writing a cooking recipe. Given the list of ingredients, 
+      produce a single valid JSON object ONLY of a recipe and give it a title as well as assign tags-
+      with the following top-level keys: recipe, ingredients, recipe_ingredients, 
+      steps, tags.\n- recipe should contain title, description, servings, prep_time, 
+      cook_time, image_url.\n- ingredients should be an array of objects with name.\n- 
+      recipe_ingredients should be an array mapping ingredient_name to quantity, unit, 
+      preparation and order.\n- steps should be an array of {step_number, instruction}.\n- 
+      tags should be an array of {name}.\nReturn parsable JSON only.\n\nIngredients:`;
       promptText = `${prompt}\n${promptText}`;
     }
 
@@ -166,6 +173,15 @@ export async function generateText({
 function parseStructuredResponse({ json, respText }) {
   // If JSON already contains desired keys, normalize and return
   const safeNumber = (v, fallback = 0) => {
+    if (v == null) return fallback;
+    // If already a number, accept it
+    if (typeof v === "number") return Number.isFinite(v) ? v : fallback;
+    // If it's a string like "15 minutes", extract the first number
+    if (typeof v === "string") {
+      const m = v.match(/(-?\d+(?:\.\d+)?)/);
+      if (m) return Number(m[1]);
+      return fallback;
+    }
     const n = Number(v);
     return Number.isFinite(n) ? n : fallback;
   };
@@ -183,7 +199,7 @@ function parseStructuredResponse({ json, respText }) {
         image_url: topRecipe.image_url || topRecipe.image || null,
       };
 
-      // Ensure ingredients include explicit id=null so callers know they must be
+      // Ensure ingredients include explicit id=null so users know they must be
       // upserted/linked to DB ingredient ids before inserting recipe_ingredients.
       const ingredients = (json.ingredients || topRecipe.ingredients || []).map(
         (ing) => {
@@ -250,7 +266,96 @@ function parseStructuredResponse({ json, respText }) {
   }
 
   // Fallback: parse plaintext (simple heuristics)
-  const text = String(respText || "");
+  let text = String(respText || "").trim();
+  // Strip common code fences (```json ... ``` or ``` ... ```)
+  text = text
+    .replace(/^\s*```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/i, "")
+    .trim();
+  // If the response contains an embedded JSON object or array, try to extract
+  // and parse it. Use a few heuristics in order of confidence so we avoid
+  // spamming JSON.parse exceptions for commonly-seen LLM output formats.
+  const tryParseJson = (s) => {
+    if (!s || typeof s !== "string") return null;
+    try {
+      return JSON.parse(s);
+    } catch {
+      // Try light sanitization: remove trailing commas before closing ] or }
+      try {
+        const cleaned = s.replace(/,\s*(?=[}\]])/g, "");
+        return JSON.parse(cleaned);
+      } catch {
+        return null;
+      }
+    }
+  };
+
+  // 1) Try code-fenced blocks first (```json ... ``` or ``` ... ```) - common
+  // when models emit JSON but wrap it in fences.
+  const candidates = [];
+  try {
+    const fenceRe = /```(?:json)?\s*([\s\S]*?)\s*```/gi;
+    let m;
+    while ((m = fenceRe.exec(text))) {
+      if (m[1]) candidates.push(m[1]);
+    }
+  } catch {
+    // ignore
+  }
+
+  // 2) Try a small non-greedy brace/array match as a quick candidate
+  try {
+    const shortMatch = text.match(/(\{[\s\S]*?\}|\[[\s\S]*?\])/);
+    if (shortMatch && shortMatch[1]) candidates.push(shortMatch[1]);
+  } catch {
+    // ignore
+  }
+
+  // 3) Last-resort: scan for the first balanced JSON-like block (handles
+  // nested objects/arrays better than a single regex). This avoids repeatedly
+  // throwing from JSON.parse on large garbage strings.
+  const findBalanced = (s) => {
+    if (!s) return null;
+    const openers = { "{": "}", "[": "]" };
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (ch !== "{" && ch !== "[") continue;
+      const stack = [ch];
+      for (let j = i + 1; j < s.length; j++) {
+        const c = s[j];
+        if (c === "{" || c === "[") stack.push(c);
+        else if (c === "}" || c === "]") {
+          const last = stack[stack.length - 1];
+          if (openers[last] === c) stack.pop();
+          else break; // mismatched bracket, give up this start
+        }
+        if (stack.length === 0) {
+          return s.slice(i, j + 1);
+        }
+      }
+    }
+    return null;
+  };
+
+  try {
+    const balanced = findBalanced(text);
+    if (balanced) candidates.push(balanced);
+  } catch {
+    // ignore
+  }
+
+  // Try parsing each candidate until one produces a usable object/array.
+  for (let i = 0; i < candidates.length; i++) {
+    const c = candidates[i];
+    const parsed = tryParseJson(c);
+    if (parsed && (typeof parsed === "object" || Array.isArray(parsed))) {
+      // If it parses to an object/array, reuse the top-level object branch
+      return parseStructuredResponse({ json: parsed, respText: null });
+    }
+  }
+
+  // If we get here, nothing parsed cleanly — fall through to the plaintext
+  // sectional parsing below.
   const sections = {};
   // split into sections by heading lines like "Ingredients:", "Steps:", "Instructions:", "Tags:", "Title:", "Description:"
   const lines = text.split(/\r?\n/);
@@ -275,14 +380,45 @@ function parseStructuredResponse({ json, respText }) {
   }
 
   // helper to parse ingredient lines like "1 cup flour - sifted"
+  // parse fractional or decimal quantities (e.g. "1/2", "1 1/2", "½", "0.5")
+  const parseQuantity = (val) => {
+    if (val == null) return null;
+    if (typeof val === "number") return Number.isFinite(val) ? val : null;
+    let s = String(val).trim();
+    if (!s) return null;
+
+    const unicodeMap = {
+      "½": "1/2",
+      "⅓": "1/3",
+      "⅔": "2/3",
+      "¼": "1/4",
+      "¾": "3/4",
+      "⅛": "1/8",
+    };
+    s = s.replace(/[¼½¾⅓⅔⅛]/g, (m) => unicodeMap[m] || m);
+
+    // mixed number like "1 1/2"
+    const mixed = s.match(/^\s*(\d+)\s+(\d+)\/(\d+)\s*$/);
+    if (mixed) return Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3]);
+
+    const frac = s.match(/^\s*(-?\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)\s*$/);
+    if (frac) return Number(frac[1]) / Number(frac[2]);
+
+    const num = s.match(/-?\d+(?:\.\d+)?/);
+    if (num) return Number(num[0]);
+    return null;
+  };
+
   const parseIngredientLine = (line) => {
     // try "quantity unit name - preparation" or fallback to name only
-    const ingRe = /^\s*([0-9]+(?:\.[0-9]+)?)\s*(\w+)?\s+(.+?)(?:\s*-\s*(.*))?$/;
+    // allow fractions in the quantity part
+    const ingRe = /^\s*([^\s]+)\s+(\w+)?\s+(.+?)(?:\s*-\s*(.*))?$/;
     const m = line.match(ingRe);
     if (m) {
+      const rawQty = m[1];
       return {
         name: (m[3] || "").trim(),
-        quantity: safeNumber(m[1], null),
+        quantity: parseQuantity(rawQty),
         unit: m[2] || null,
         preparation: m[4] || null,
       };
@@ -342,6 +478,7 @@ function parseStructuredResponse({ json, respText }) {
     title: title || "Generated Recipe",
     description: description || "",
     servings: 1,
+    // keep times numeric when possible (e.g. "15 minutes" -> 15)
     prep_time: 0,
     cook_time: 0,
     image_url: null,
@@ -359,6 +496,29 @@ export { parseStructuredResponse };
 // The payload includes a list of ingredient names to upsert and recipe_ingredients
 // that reference ingredient_name. The server should upsert ingredients (returning ids)
 // and then insert recipe_ingredients using those ids.
+// Client-side quantity parser (same rules as server): converts "1/2", "1 1/2", "½", "0.5" -> numeric
+export function parseQuantity(val) {
+  if (val == null) return null;
+  if (typeof val === "number") return Number.isFinite(val) ? val : null;
+  let s = String(val).trim();
+  if (!s) return null;
+  const unicodeMap = {
+    "½": "1/2",
+    "⅓": "1/3",
+    "⅔": "2/3",
+    "¼": "1/4",
+    "¾": "3/4",
+    "⅛": "1/8",
+  };
+  s = s.replace(/[¼½¾⅓⅔⅛]/g, (m) => unicodeMap[m] || m);
+  const mixed = s.match(/^\s*(\d+)\s+(\d+)\/(\d+)\s*$/);
+  if (mixed) return Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3]);
+  const frac = s.match(/^\s*(-?\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)\s*$/);
+  if (frac) return Number(frac[1]) / Number(frac[2]);
+  const num = s.match(/-?\d+(?:\.\d+)?/);
+  if (num) return Number(num[0]);
+  return null;
+}
 export function buildSavePayload(structured) {
   if (!structured) return null;
   const { recipe, ingredients, recipe_ingredients, steps, tags } = structured;
@@ -370,7 +530,7 @@ export function buildSavePayload(structured) {
   const ri = (recipe_ingredients || []).map((r) => ({
     ingredient_id: r.ingredient_id ?? null,
     ingredient_name: r.ingredient_name ?? null,
-    quantity: r.quantity ?? null,
+    quantity: parseQuantity(r.quantity ?? null),
     unit: r.unit ?? null,
     preparation: r.preparation ?? null,
     order: r.order ?? null,

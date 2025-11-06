@@ -1,4 +1,5 @@
-// reset.js is temporary: replaced by createTables.js for creating.
+// reset.js only works for hard coded data from config/data/*.js
+// It creates all tables from scratch and seeds them with data if present
 
 import path from "path";
 import { fileURLToPath } from "url";

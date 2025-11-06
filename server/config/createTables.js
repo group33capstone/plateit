@@ -1,3 +1,4 @@
+// Main way to create tables in the DB
 import path from "path";
 import { fileURLToPath } from "url";
 
