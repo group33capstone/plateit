@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import "./viewallpage.css";
+import "../styles/viewallpage.css";
 
 export default function ViewAllPage() {
   const [recipes, setRecipes] = useState(null);
