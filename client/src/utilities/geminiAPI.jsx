@@ -30,8 +30,8 @@ export async function generateText({
     const devBase =
       typeof import.meta !== "undefined" &&
       import.meta.env &&
-      import.meta.env.DEV
-        ? "http://localhost:3001"
+      import.meta.env.VITE_API_URL
+        ? import.meta.env.VITE_API_URL
         : "";
 
     const r = await fetch(`${devBase}/api/genai/generate`, {
