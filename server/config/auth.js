@@ -1,5 +1,5 @@
 import GitHubStrategy from "passport-github2";
-import pool from "./database";
+import pool from "./database.js";
 
 /* Note: callbackURL must be changed later with our published link */
 const options = {
