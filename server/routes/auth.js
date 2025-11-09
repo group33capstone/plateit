@@ -3,11 +3,21 @@ import passport from "passport";
 
 const router = express.Router();
 
-router.get("/login/success", (req, res) => {
+const setNoCache = (req, res, next) => {
+  res.set("Cache-Control", "no-cache, private, no-store, must-revalidate");
+  next();
+};
+
+router.get("/login/success", setNoCache, (req, res) => {
   if (req.user) {
     res.status(200).json({
       success: true,
-      user: req.user,
+      user: { id: req.user.id },
+    });
+  } else {
+    res.status(401).json({
+      success: false,
+      user: null,
     });
   }
 });
@@ -15,23 +25,23 @@ router.get("/login/success", (req, res) => {
 router.get("/login/failed", (req, res) => {
   res.status(401).json({
     success: false,
-    message: "failure",
   });
 });
 
-router.get("/logout", function (req, res, next) {
+router.get("/logout", (req, res, next) => {
   req.logout((err) => {
     if (err) {
       return next(err);
     }
 
     req.session.destroy((err) => {
-      res.clearCookie("connect.sid");
+      if (err) {
+        console.error("Session destruction error:", err);
+      }
 
-      res.json({
-        status: "logout",
-        user: {},
-      });
+      res.clearCookie("connect.sid");
+      res.set("Cache-Control", "no-cache, private, no-store, must-revalidate");
+      res.redirect("http://localhost:5173/login");
     });
   });
 });
@@ -41,7 +51,6 @@ router.get(
   passport.authenticate("github", { scope: ["read:user", "user:email"] })
 );
 
-// NOTE: Redirect URLs must be changed later with our published link
 router.get(
   "/github/callback",
   passport.authenticate("github", {

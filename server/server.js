@@ -15,6 +15,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import recipesRouter from "./routes/recipes.js";
 import authRoutes from "./routes/auth.js";
+import usersRoutes from "./routes/users.js";
 import { generate } from "./config/gemini.js";
 import { pool } from "./config/database.js";
 
@@ -50,6 +51,9 @@ const ENV = process.env || {};
 
 // Auth Routes
 app.use("/auth", authRoutes);
+
+// Users Routes
+app.use("/users", usersRoutes);
 
 // Serve static files (images) from assets folder
 app.use("/assets", express.static(path.join(__dirname, "data/assets")));
