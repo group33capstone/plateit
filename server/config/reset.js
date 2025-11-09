@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   username TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
+  githubid TEXT NOT NULL UNIQUE,
+  avatarurl TEXT,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -166,15 +168,22 @@ const seedUsersTable = async (users = []) => {
   }
   try {
     for (const u of users) {
-      const text = `INSERT INTO users (username, email, created_at, updated_at) VALUES ($1,$2, COALESCE($3, NOW()), COALESCE($4, NOW()))`;
+      const text = `
+        INSERT INTO users (githubid, username, email, avatarurl, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, COALESCE($5, NOW()), COALESCE($6, NOW()))
+      `;
+
       const values = [
+        u.githubid,
         u.username,
         u.email,
+        u.avatarurl,
         u.created_at || null,
         u.updated_at || null,
       ];
+
       await pool.query(text, values);
-      console.log(`✅ user ${u.username} added`);
+      console.log(`✅ user ${u.username} added (githubid: ${u.githubid})`);
     }
   } catch (error) {
     console.error("⚠️ error inserting users", error);
