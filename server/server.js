@@ -5,26 +5,57 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 
+// OAuth
+import passport from "passport";
+import session from "express-session";
+import { GitHub } from "./config/auth.js";
+
 // __dirname is not available in ESM; derive it from import.meta.url
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import recipesRouter from "./routes/recipes.js";
+import authRoutes from "./routes/auth.js";
 import { generate } from "./config/gemini.js";
 import { pool } from "./config/database.js";
 
 const app = express();
-app.use(cors());
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+// Note: origin must be changed later with our published link
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: "GET,POST,PUT,DELETE,PATCH",
+    credentials: true,
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
 app.use(express.json({ limit: "50mb" }));
 
+passport.use(GitHub);
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+passport.deserializeUser((user, done) => {
+  done(null, user);
+});
+
 const ENV = process.env || {};
+
+// Auth Routes
+app.use("/auth", authRoutes);
 
 // Serve static files (images) from assets folder
 app.use("/assets", express.static(path.join(__dirname, "data/assets")));
 
 // Mount recipes router under /api/recipes so client can POST to /api/recipes
 app.use("/api/recipes", recipesRouter);
-// app.use("/locations", locationsRouter);
-// app.use("/events", eventsRouter);
 
 // Server ENV will be passed into the generate implementation in config/gemini.js
 
