@@ -11,10 +11,8 @@ export default function FormPage() {
   const [savePayload, setSavePayload] = useState(null);
   const [saveStatus, setSaveStatus] = useState(null);
 
-  // GenAI call moved to utilities/geminiaidemo.generateText
-
   async function handleSubmitText(e) {
-    e && e.preventDefault && e.preventDefault();
+    e?.preventDefault?.();
     setTextBusy(true);
     setError(null);
     try {
@@ -26,13 +24,14 @@ export default function FormPage() {
           question,
           model: modelId,
         },
-        // always request structured recipe output
         structured: true,
         asRecipe: true,
       });
 
       if (!result.ok) {
         setError(result.error || "Unknown error");
+        setStructuredResult(null);
+        setSavePayload(null);
       } else {
         const structured = result.structured || null;
         setStructuredResult(structured);
@@ -45,103 +44,183 @@ export default function FormPage() {
   }
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Input your Ingredients</h2>
+    <div className="container my-4">
+      <div className="row justify-content-center">
+        <div className="col-lg-8">
+          <h2 className="mb-3">Input your Ingredients</h2>
+          <p className="text-muted">
+            Enter ingredients (e.g., <em>eggs, tomatoes, pasta</em>) and choose a Gemini model.
+            We’ll generate a structured recipe you can save.
+          </p>
 
-      <form
-        onSubmit={handleSubmitText}
-        style={{ display: "grid", gap: 10, maxWidth: 700 }}
-      >
-        <label>
-          Select Gemini Model
-          <select value={modelId} onChange={(e) => setModelId(e.target.value)}>
-            <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-            <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-          </select>
-        </label>
+          {/* Error alert */}
+          {error && (
+            <div className="alert alert-danger" role="alert">
+              <strong>Error:</strong> {error}
+            </div>
+          )}
 
-        <label>
-          Your recipe ingredients:
-          <textarea
-            rows={4}
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-          />
-        </label>
-        {/* always generate a structured recipe from the provided ingredients */}
+          <div className="card shadow-sm mb-4">
+            <div className="card-body">
+              <form onSubmit={handleSubmitText} className="d-grid gap-3">
+                {/* Model select */}
+                <div>
+                  <label htmlFor="modelSelect" className="form-label">
+                    Select Gemini Model
+                  </label>
+                  <select
+                    id="modelSelect"
+                    className="form-select"
+                    value={modelId}
+                    onChange={(e) => setModelId(e.target.value)}
+                    disabled={textBusy}
+                  >
+                    <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+                    <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                  </select>
+                </div>
 
-        <div>
-          <button type="submit" disabled={textBusy}>
-            {textBusy ? "Thinking…" : "Submit"}
-          </button>
-        </div>
-      </form>
+                {/* Ingredients textarea */}
+                <div>
+                  <label htmlFor="ingredients" className="form-label">
+                    Your recipe ingredients
+                  </label>
+                  <textarea
+                    id="ingredients"
+                    className="form-control"
+                    rows={4}
+                    placeholder="e.g., chicken thighs, garlic, lemon, olive oil, paprika"
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    disabled={textBusy}
+                  />
+                  <div className="form-text">
+                    Tip: Include quantities for more precise results.
+                  </div>
+                </div>
 
-      {error && (
-        <div
-          style={{ color: "#b00020", whiteSpace: "pre-wrap", marginTop: 12 }}
-        >
-          Error: {error}
-        </div>
-      )}
+                {/* Submit */}
+                <div className="d-flex gap-2 justify-content-center align-items-center">
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={textBusy || !question.trim()}
+                  >
+                    {textBusy ? (
+                      <>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"
+                        />
+                        Thinking…
+                      </>
+                    ) : (
+                      "Generate Recipe"
+                    )}
+                  </button>
 
-      {structuredResult && (
-        <div
-          style={{
-            marginTop: 10,
-            padding: 10,
-            border: "1px solid #ddd",
-            maxWidth: 900,
-            overflowX: "auto",
-          }}
-        >
-          <strong>Structured response</strong>
-          <div style={{ marginTop: 8 }}>
-            <pre style={{ whiteSpace: "pre-wrap", fontSize: 13 }}>
-              {JSON.stringify(structuredResult, null, 2)}
-            </pre>
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    disabled={textBusy && !question}
+                    onClick={() => {
+                      setQuestion("");
+                      setStructuredResult(null);
+                      setSavePayload(null);
+                      setSaveStatus(null);
+                      setError(null);
+                    }}
+                  >
+                    Clear
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-          <div style={{ marginTop: 12 }}>
-            <button
-              disabled={!savePayload}
-              onClick={async () => {
-                setSaveStatus("saving");
-                try {
-                  const devBase =
-                    typeof import.meta !== "undefined" &&
-                    import.meta.env &&
-                    import.meta.env.DEV
-                      ? "http://localhost:3001"
-                      : "";
-                  const res = await fetch(`${devBase}/api/recipes`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(savePayload),
-                  });
-                  let j = null;
-                  try {
-                    j = await res.json();
-                  } catch {
-                    j = null;
-                  }
-                  if (!res.ok) {
-                    setSaveStatus(`error: ${j?.error || res.statusText}`);
-                  } else {
-                    setSaveStatus(
-                      `ok: recipeId=${j?.recipeId ?? j?.id ?? "unknown"}`
-                    );
-                  }
-                } catch (err) {
-                  setSaveStatus(`error: ${String(err)}`);
-                }
-              }}
-            >
-              Save as recipe
-            </button>
-            {saveStatus && <div style={{ marginTop: 8 }}>{saveStatus}</div>}
-          </div>
+
+          {/* Structured output */}
+          {structuredResult && (
+            <div className="card shadow-sm">
+              <div className="card-body">
+                <div className="d-flex align-items-center justify-content-between">
+                  <strong>Structured response</strong>
+                  {saveStatus && (
+                    <span
+                      className={
+                        "badge " +
+                        (String(saveStatus).startsWith("ok")
+                          ? "text-bg-success"
+                          : "text-bg-warning")
+                      }
+                    >
+                      {saveStatus}
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-3">
+                  <pre className="bg-light p-3 rounded small mb-0">
+                    {JSON.stringify(structuredResult, null, 2)}
+                  </pre>
+                </div>
+
+                <div className="mt-3 d-flex gap-2">
+                  <button
+                    className="btn btn-success"
+                    disabled={!savePayload}
+                    onClick={async () => {
+                      setSaveStatus("saving");
+                      try {
+                        const devBase =
+                          typeof import.meta !== "undefined" &&
+                          import.meta.env &&
+                          import.meta.env.DEV
+                            ? "http://localhost:3001"
+                            : "";
+                        const res = await fetch(`${devBase}/api/recipes`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(savePayload),
+                        });
+                        let j = null;
+                        try {
+                          j = await res.json();
+                        } catch {
+                          j = null;
+                        }
+                        if (!res.ok) {
+                          setSaveStatus(`error: ${j?.error || res.statusText}`);
+                        } else {
+                          setSaveStatus(
+                            `ok: recipeId=${j?.recipeId ?? j?.id ?? "unknown"}`
+                          );
+                        }
+                      } catch (err) {
+                        setSaveStatus(`error: ${String(err)}`);
+                      }
+                    }}
+                  >
+                    Save as recipe
+                  </button>
+
+                  <button
+                    className="btn btn-outline-secondary"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(
+                        JSON.stringify(structuredResult, null, 2)
+                      );
+                    }}
+                  >
+                    Copy JSON
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
-      )}
+      </div>
     </div>
   );
 }

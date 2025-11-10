@@ -15,10 +15,11 @@ function Login() {
 
   return (
     <div className="Login">
-      <h1>PlateIT</h1>
+      <h1 id="title">PlateIt</h1>
+
       <center>
         <a href={AUTH_URL}>
-          <button className="headerBtn">
+          <button className="headerBtn p-3">
             {" "}
             <FaGithub /> Login via Github{" "}
           </button>
