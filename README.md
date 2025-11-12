@@ -1,26 +1,72 @@
-# Authors
+# PlateIT
 
-<Luis Ibarra, Joshua Akeredolu, Dongyoung Yang>
+CodePath WEB103 Final Project
 
-# Group33 Captstone Project
+Designed and developed by: [Joshua Akeredolu, Dongyyoung Yang, Luis Ibarra]
 
-This repository is a fullstack webapp with Vite + React client talking to a local Node/Express proxy which forwards requests to Google's Generative Language (Gemini) APIs.
+🔗 Link to deployed app:
 
-<img src='walkthrough.gif' title='Video Walkthrough' width='' alt='Video Walkthrough' />
+## About
 
-## Prerequisites
+### Description and Purpose
 
-- A Google Generative Language API key (from Google AI Studio / Cloud Console)
+[PlateIT is a smart recipe generator. Enter the ingredients you have on hand, and PlateIT uses AI to suggest a complete meal—with steps, cook time, and nutrition estimates. You can also enter a dish name to get a recipe from scratch, or ask for a vegan version of any meal.]
 
-## Project layout
+### Inspiration
 
-- `client/` — Vite + React frontend (dev port: 5173)
-- `server/` — local Express proxy that forwards requests to Google (listens on port 3001 by default)
+[busy students, meal preppers, and anyone staring at a fridge wondering what to cook.]
 
-## Environment variables
+## Tech Stack
 
-Create a `.env` file in the `server/` folder (do NOT commit it). You can copy the example below and fill in your API key.
+Frontend: React (Vite), React Router, Bootstrap
 
-server/.env
+Backend: Node.js, Express.js
 
-GOOGLE_API_KEY="your_real_google_api_key_here"
+Database: PostgreSQL / SupaBase 
+
+## Features
+
+### Ingredient ➜ Meal Generator
+
+[Enter a comma-separated list of ingredients and kitchenwares. The AI proposes a dish and outputs:
+
+Title, description, difficulty, time estimate
+
+Step-by-step instructions
+
+Approx. nutrition per serving]
+
+[gif goes here]
+
+### Recipe by Dish Name
+
+[Type “Jollof Rice” (or any dish) to get a complete recipe with ingredients, steps, and tips.]
+
+[gif goes here]
+
+### Veganize Any Dish
+
+[✅ Options for vegetarians when they search recipes by using a checkbox and a list of types of vegetarian]
+
+[gif goes here]
+
+### Save & Rate Recipes 
+Log in to bookmark any recipe, add personal notes, and rate results to improve future suggestions.
+
+[gif goes here]
+
+### [ADDITIONAL FEATURES GO HERE - ADD ALL FEATURES HERE IN THE FORMAT ABOVE; you will check these off and add gifs as you complete them]
+
+### Nutrition & Macros Estimate (Stretch)
+Approximate calories, protein, carbs, and fats per serving using ingredient heuristics and portion sizes.
+[gif goes here]
+
+### Step Mode with Timers (Stretch)
+Full-screen, one-step-at-a-time “cook mode,” optional voice controls, and per-step timers so your hands can stay off the keyboard.
+
+[gif goes here]
+
+
+## Installation Instructions
+
+[instructions go here]
