@@ -49,8 +49,8 @@ export default function FormPage() {
         <div className="col-lg-8">
           <h2 className="mb-3">Input your Ingredients</h2>
           <p className="text-muted">
-            Enter ingredients (e.g., <em>eggs, tomatoes, pasta</em>) and choose a Gemini model.
-            We’ll generate a structured recipe you can save.
+            Enter ingredients (e.g., <em>eggs, tomatoes, pasta</em>) and choose
+            a Gemini model. We’ll generate a structured recipe you can save.
           </p>
 
           {/* Error alert */}
@@ -218,7 +218,6 @@ export default function FormPage() {
               </div>
             </div>
           )}
-
         </div>
       </div>
     </div>
