@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { generateText, buildSavePayload } from "../utilities/geminiAPI";
+import Markdown from "react-markdown";
 
 export default function App() {
+  const [markdown, setMarkdown] = useState("");
   const [query, setQuery] = useState(""); // Used as 'question' for the API
   const [filters, setFilters] = useState({
     vegan: false,
@@ -270,6 +272,7 @@ export default function App() {
                 <div className="card-body p-4">
                   <div className="d-flex align-items-center justify-content-between mb-3">
                     <h5 className="card-title mb-0">Generated Recipe</h5>
+
                     {saveStatus && (
                       <span
                         className={`badge ${
@@ -279,7 +282,7 @@ export default function App() {
                             : "text-bg-warning"
                         }`}
                       >
-                        {saveStatus}
+                        <Markdown>{markdown}</Markdown>
                       </span>
                     )}
                   </div>
