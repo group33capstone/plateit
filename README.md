@@ -12,6 +12,12 @@ Designed and developed by: [Joshua Akeredolu, Dongyyoung Yang, Luis Ibarra]
 
 [PlateIT is a smart recipe generator. Enter the ingredients you have on hand, and PlateIT uses AI to suggest a complete meal—with steps, cook time, and nutrition estimates. You can also enter a dish name to get a recipe from scratch, or ask for a vegan version of any meal.]
 
+## Video Walkthrough
+
+Here's a walkthrough of implemented required features:
+
+<img src='walkthrough.gif' title='Video Walkthrough' width='' alt='Video Walkthrough' />
+
 ### Inspiration
 
 [busy students, meal preppers, and anyone staring at a fridge wondering what to cook.]
