@@ -32,7 +32,9 @@ function App() {
       {/* Bootstrap Navbar */}
       <nav className="navbar navbar-expand-md navbar-dark bg-dark">
         <div className="container">
-          <Link className="navbar-brand" to="/">PlateIt</Link>
+          <Link className="navbar-brand" to="/">
+            PlateIt
+          </Link>
 
           <button
             className="navbar-toggler"
@@ -49,13 +51,19 @@ function App() {
           <div className="collapse navbar-collapse" id="mainNav">
             <ul className="navbar-nav me-auto mb-2 mb-md-0">
               <li className="nav-item">
-                <NavLink className="nav-link" to="/" end>Home</NavLink>
+                <NavLink className="nav-link" to="/" end>
+                  Home
+                </NavLink>
               </li>
               <li className="nav-item">
-                <NavLink className="nav-link" to="/form">New</NavLink>
+                <NavLink className="nav-link" to="/form">
+                  New
+                </NavLink>
               </li>
               <li className="nav-item">
-                <NavLink className="nav-link" to="/list">All</NavLink>
+                <NavLink className="nav-link" to="/list">
+                  All
+                </NavLink>
               </li>
             </ul>
 
@@ -92,6 +100,7 @@ function App() {
           <Route path="/form" element={<FormPage />} />
           <Route path="/list" element={<ViewAllPage />} />
           <Route path="/detail/:id" element={<DetailPage />} />
+          <Route path="/recipes/:id" element={<DetailPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/profile/:id" element={<Profile />} />
           <Route path="/user/recipes/:id" element={<ViewUserRecipes />} />

@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS recipes (
   user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   title TEXT NOT NULL,
   description TEXT NOT NULL,
+  raw_markdown TEXT,
   servings INTEGER NOT NULL,
   prep_time INTEGER NOT NULL,
   cook_time INTEGER NOT NULL,

@@ -21,4 +21,10 @@ router.get("/:recipeId", recipesController.getRecipeById);
 // API endpoint to get recipe data by ID
 router.get("/:recipeId/data", recipesController.getRecipeById);
 
+// Update a recipe (partial)
+router.patch("/:recipeId", recipesController.updateRecipe);
+
+// Delete a recipe
+router.delete("/:recipeId", recipesController.deleteRecipe);
+
 export default router;

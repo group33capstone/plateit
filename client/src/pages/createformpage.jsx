@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { generateText, buildSavePayload } from "../utilities/geminiAPI";
+import ReactMarkdown from "react-markdown";
 
 export default function FormPage() {
   const [question, setQuestion] = useState("");
@@ -10,15 +11,27 @@ export default function FormPage() {
   const [structuredResult, setStructuredResult] = useState(null);
   const [savePayload, setSavePayload] = useState(null);
   const [saveStatus, setSaveStatus] = useState(null);
+  const [filters, setFilters] = useState({
+    vegan: false,
+    kosher: false,
+    halal: false,
+  });
+
+  const toggleFilter = (key) => setFilters((p) => ({ ...p, [key]: !p[key] }));
 
   async function handleSubmitText(e) {
     e?.preventDefault?.();
     setTextBusy(true);
     setError(null);
     try {
+      const dietaryOptions = Object.entries(filters)
+        .filter(([, on]) => on)
+        .map(([k]) => k);
+
       const result = await generateText({
         model: modelId,
         question,
+        options: dietaryOptions,
         persist: {
           title: (question || "Question").slice(0, 80),
           question,
@@ -80,6 +93,38 @@ export default function FormPage() {
                   </select>
                 </div>
 
+                {/* Dietary filters */}
+                <div className="mb-3">
+                  <label className="form-label d-block">Dietary Filters</label>
+                  <div
+                    className="d-flex flex-wrap justify-content-center gap-3 mt-2"
+                    role="group"
+                    aria-label="Dietary filters"
+                  >
+                    {Object.keys(filters).map((filterKey) => (
+                      <div
+                        className="form-check form-check-inline"
+                        key={filterKey}
+                      >
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id={`filter-${filterKey}`}
+                          checked={filters[filterKey]}
+                          onChange={() => toggleFilter(filterKey)}
+                          disabled={textBusy}
+                        />
+                        <label
+                          className="form-check-label text-capitalize"
+                          htmlFor={`filter-${filterKey}`}
+                        >
+                          {filterKey}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Ingredients textarea */}
                 <div>
                   <label htmlFor="ingredients" className="form-label">
@@ -130,6 +175,7 @@ export default function FormPage() {
                       setSavePayload(null);
                       setSaveStatus(null);
                       setError(null);
+                      setFilters({ vegan: false, kosher: false, halal: false });
                     }}
                   >
                     Clear
@@ -160,9 +206,18 @@ export default function FormPage() {
                 </div>
 
                 <div className="mt-3">
-                  <pre className="bg-light p-3 rounded small mb-0">
-                    {JSON.stringify(structuredResult, null, 2)}
-                  </pre>
+                  {/* Render markdown if available, otherwise show JSON */}
+                  {structuredResult?.raw_markdown ? (
+                    <div className="bg-light p-3 rounded small mb-0">
+                      <ReactMarkdown>
+                        {structuredResult.raw_markdown}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <pre className="bg-light p-3 rounded small mb-0">
+                      {JSON.stringify(structuredResult, null, 2)}
+                    </pre>
+                  )}
                 </div>
 
                 <div className="mt-3 d-flex gap-2">
@@ -178,10 +233,33 @@ export default function FormPage() {
                           import.meta.env.DEV
                             ? "http://localhost:3001"
                             : "";
+                        // If we have raw_markdown, prefer to send only the markdown.
+                        // Otherwise send the full structured savePayload so the server can insert normalized rows.
+                        const hasMarkdown = Boolean(
+                          savePayload?.raw_markdown ||
+                            savePayload?.recipe?.description
+                        );
+                        const postBody = hasMarkdown
+                          ? {
+                              title:
+                                (savePayload?.recipe &&
+                                  savePayload.recipe.title) ||
+                                savePayload?.recipe?.name ||
+                                savePayload?.title ||
+                                question ||
+                                "Generated Recipe",
+                              raw_markdown:
+                                savePayload?.raw_markdown ||
+                                savePayload?.recipe?.description ||
+                                null,
+                            }
+                          : savePayload;
+
                         const res = await fetch(`${devBase}/api/recipes`, {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify(savePayload),
+                          credentials: "include",
+                          body: JSON.stringify(postBody),
                         });
                         let j = null;
                         try {

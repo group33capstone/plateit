@@ -5,6 +5,7 @@ export async function generateText({
   persist,
   structured,
   asRecipe = false,
+  options = [],
 } = {}) {
   try {
     // If user requests recipe generation, wrap the ingredients into a
@@ -13,14 +14,18 @@ export async function generateText({
     if (asRecipe) {
       // Ensure we request structured output
       structured = true;
-      const prompt = `You are a helpful, precise chef writing a cooking recipe. Given the list of ingredients, 
-      produce a single valid JSON object ONLY of a recipe and give it a title as well as assign tags-
-      with the following top-level keys: recipe, ingredients, recipe_ingredients, 
-      steps, tags.\n- recipe should contain title, description, servings, prep_time, 
-      cook_time, image_url.\n- ingredients should be an array of objects with name.\n- 
-      recipe_ingredients should be an array mapping ingredient_name to quantity, unit, 
-      preparation and order.\n- steps should be an array of {step_number, instruction}.\n- 
-      tags should be an array of {name}.\nReturn parsable JSON only.\n\nIngredients:`;
+      let prompt = `You are a helpful, precise chef writing a cooking recipe. Given the list of ingredients,
+     produce a single valid JSON object and also a Markdown version of the recipe. Return a JSON object with two keys:
+     - "recipe": a structured JSON object containing title, description, servings, prep_time, cook_time, image_url, etc.
+     - "markdown": a string containing the full recipe formatted in Markdown (headings, ingredient list, and steps).
+     The top-level JSON should look like { "recipe": { ... }, "markdown": "# Title\\n..." } and be parsable as JSON. Do not include any additional text outside the JSON object.
+
+     Ingredients:`;
+      // If dietary options are provided (e.g., vegan, halal), instruct the model to respect them.
+      if (Array.isArray(options) && options.length) {
+        const opts = options.map((o) => String(o).toLowerCase()).join(", ");
+        prompt += `\n\nImportant: Please make the recipe compliant with these dietary requirements: ${opts}.`;
+      }
       promptText = `${prompt}\n${promptText}`;
     }
 
@@ -186,6 +191,7 @@ function parseStructuredResponse({ json, respText }) {
     return Number.isFinite(n) ? n : fallback;
   };
 
+  const explicitMarkdown = json?.markdown || json?.markdown_text || null;
   if (json && typeof json === "object") {
     // Accept several possible shapes: { recipe: {...}, ingredients: [...], steps: [...] }
     if (json.recipe || json.ingredients || json.steps || json.tags) {
@@ -261,7 +267,14 @@ function parseStructuredResponse({ json, respText }) {
             order: idx + 1,
           }));
 
-      return { recipe, ingredients, recipe_ingredients, steps, tags };
+      return {
+        recipe,
+        ingredients,
+        recipe_ingredients,
+        steps,
+        tags,
+        raw_markdown: explicitMarkdown || respText || null,
+      };
     }
   }
 
@@ -484,7 +497,14 @@ function parseStructuredResponse({ json, respText }) {
     image_url: null,
   };
 
-  return { recipe, ingredients, recipe_ingredients, steps, tags };
+  return {
+    recipe,
+    ingredients,
+    recipe_ingredients,
+    steps,
+    tags,
+    raw_markdown: explicitMarkdown || text,
+  };
 }
 
 export default { generateText };
@@ -542,5 +562,6 @@ export function buildSavePayload(structured) {
     recipe_ingredients: ri,
     steps: steps || [],
     tags: tags || [],
+    raw_markdown: structured.raw_markdown ?? null,
   };
 }

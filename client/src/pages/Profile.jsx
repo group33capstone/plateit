@@ -195,7 +195,7 @@ function Profile() {
 
           {owner && (
             <>
-              <Button
+              {/* <Button
                 variant="outline-secondary"
                 size="lg"
                 as={Link}
@@ -210,7 +210,7 @@ function Profile() {
                 to={`/users/${profileId}/mycomments`}
               >
                 View Comments
-              </Button>
+              </Button> */}
               <Button variant="danger" size="lg">
                 Delete My Account
               </Button>
