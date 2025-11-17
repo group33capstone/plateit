@@ -7,11 +7,13 @@
     "start": "node server.js",
     "dev": "node server.js",
     "reset": "node config/createTables.js",
-    "create-tables": "node config/createTables.js"
+    "create-tables": "node config/createTables.js",
+    "migrate:add-raw-markdown": "node config/addRawMarkdownColumn.js"
   },
   "dependencies": {
     "@google-ai/generativelanguage": "^3.5.0",
     "cors": "^2.8.5",
+    "debug": "^4.4.3",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-session": "^1.18.2",

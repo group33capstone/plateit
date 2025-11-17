@@ -3,7 +3,9 @@ import { generateText, buildSavePayload } from "../utilities/geminiAPI";
 import Markdown from "react-markdown";
 
 export default function App() {
-  const [markdown, setMarkdown] = useState("");
+  // We only need the markdown value here; the setter was unused and triggered
+  // lint/runtime complaints in some environments. Destructure only the value.
+  const [markdown] = useState("");
   const [query, setQuery] = useState(""); // Used as 'question' for the API
   const [filters, setFilters] = useState({
     vegan: false,
@@ -109,6 +111,7 @@ export default function App() {
       const res = await fetch(`${devBase}/api/recipes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(savePayload), // savePayload is set by buildSavePayload
       });
 
