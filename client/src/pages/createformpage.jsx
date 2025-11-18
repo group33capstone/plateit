@@ -75,7 +75,7 @@ export default function FormPage() {
 
           <div className="card shadow-sm mb-4">
             <div className="card-body">
-              <form onSubmit={handleSubmitText} className="d-grid gap-3">
+              <form onSubmit={handleSubmitText} className="form-grid">
                 {/* Model select */}
                 <div>
                   <label htmlFor="modelSelect" className="form-label">
@@ -97,7 +97,7 @@ export default function FormPage() {
                 <div className="mb-3">
                   <label className="form-label d-block">Dietary Filters</label>
                   <div
-                    className="d-flex flex-wrap justify-content-center gap-3 mt-2"
+                    className="dietary-filters"
                     role="group"
                     aria-label="Dietary filters"
                   >
@@ -145,7 +145,7 @@ export default function FormPage() {
                 </div>
 
                 {/* Submit */}
-                <div className="d-flex gap-2 justify-content-center align-items-center">
+                <div className="form-actions">
                   <button
                     type="submit"
                     className="btn btn-primary"
@@ -189,7 +189,7 @@ export default function FormPage() {
           {structuredResult && (
             <div className="card shadow-sm">
               <div className="card-body">
-                <div className="d-flex align-items-center justify-content-between">
+                <div className="structured-header">
                   <strong>Structured response</strong>
                   {saveStatus && (
                     <span
@@ -208,19 +208,19 @@ export default function FormPage() {
                 <div className="mt-3">
                   {/* Render markdown if available, otherwise show JSON */}
                   {structuredResult?.raw_markdown ? (
-                    <div className="bg-light p-3 rounded small mb-0">
+                    <div className="structured-markdown">
                       <ReactMarkdown>
                         {structuredResult.raw_markdown}
                       </ReactMarkdown>
                     </div>
                   ) : (
-                    <pre className="bg-light p-3 rounded small mb-0">
+                    <pre className="structured-markdown">
                       {JSON.stringify(structuredResult, null, 2)}
                     </pre>
                   )}
                 </div>
 
-                <div className="mt-3 d-flex gap-2">
+                <div className="mt-3 structured-actions">
                   <button
                     className="btn btn-success"
                     disabled={!savePayload}
