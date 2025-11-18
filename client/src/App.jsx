@@ -1,5 +1,6 @@
 import { Routes, Route, Link, NavLink, useNavigate } from "react-router-dom";
 import "./App.css";
+import "./styles/Navbar.css";
 import HomePage from "./pages/homepage";
 import FormPage from "./pages/createformpage";
 import ViewAllPage from "./pages/viewallpage";
@@ -10,6 +11,7 @@ import ViewUserRecipes from "./pages/ViewUserRecipes";
 import ViewSavedRecipes from "./pages/ViewSavedRecipes";
 import ViewMyComments from "./pages/ViewMyComments";
 import { useUser } from "./hooks/useUser";
+import "./styles/Navbar.css";
 
 function App() {
   const API_URL = import.meta.env.VITE_API_URL;
