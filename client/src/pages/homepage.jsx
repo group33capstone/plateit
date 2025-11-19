@@ -317,7 +317,7 @@ export default function App() {
                       Save structured response to database
                     </button>
 
-                    {/* <button
+                    <button
                       className="btn btn-outline-secondary btn-sm"
                       onClick={() =>
                         copyToClipboard(
@@ -326,7 +326,7 @@ export default function App() {
                       }
                     >
                       Copy JSON
-                    </button> */}
+                    </button>
                   </div>
                 </div>
               </div>

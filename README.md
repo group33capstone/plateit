@@ -28,7 +28,9 @@ Frontend: React (Vite), React Router, Bootstrap
 
 Backend: Node.js, Express.js
 
-Database: PostgreSQL / SupaBase 
+Database: PostgreSQL
+
+Link to Render database: postgresql://group33_db_user:cKHrrLZw7ItPbdYeINSTTxaLKM8NmLtp@dpg-d45th1e3jp1c73dp2k20-a.oregon-postgres.render.com/group33_db
 
 ## Features
 
@@ -56,7 +58,8 @@ Approx. nutrition per serving]
 
 [gif goes here]
 
-### Save & Rate Recipes 
+### Save & Rate Recipes
+
 Log in to bookmark any recipe, add personal notes, and rate results to improve future suggestions.
 
 [gif goes here]
@@ -64,14 +67,15 @@ Log in to bookmark any recipe, add personal notes, and rate results to improve f
 ### [ADDITIONAL FEATURES GO HERE - ADD ALL FEATURES HERE IN THE FORMAT ABOVE; you will check these off and add gifs as you complete them]
 
 ### Nutrition & Macros Estimate (Stretch)
+
 Approximate calories, protein, carbs, and fats per serving using ingredient heuristics and portion sizes.
 [gif goes here]
 
 ### Step Mode with Timers (Stretch)
+
 Full-screen, one-step-at-a-time “cook mode,” optional voice controls, and per-step timers so your hands can stay off the keyboard.
 
 [gif goes here]
-
 
 ## Installation Instructions
 
