@@ -1,6 +1,6 @@
 import { Routes, Route, Link, NavLink, useNavigate } from "react-router-dom";
 import "./App.css";
-import "./styles/Navbar.css";
+import "./styles/createformpage.css";
 import HomePage from "./pages/homepage";
 import FormPage from "./pages/createformpage";
 import ViewAllPage from "./pages/viewallpage";
@@ -34,7 +34,7 @@ function App() {
       {/* Bootstrap Navbar */}
       <nav className="navbar navbar-expand-md navbar-dark bg-dark">
         <div className="container">
-          <Link className="navbar-brand" to="/">
+          <Link className="navbar-brand" to="/form">
             PlateIt
           </Link>
 
@@ -52,19 +52,19 @@ function App() {
 
           <div className="collapse navbar-collapse" id="mainNav">
             <ul className="navbar-nav me-auto mb-2 mb-md-0">
-              <li className="nav-item">
+              {/* <li className="nav-item">
                 <NavLink className="nav-link" to="/" end>
+                  New
+                </NavLink>
+              </li> */}
+              <li className="nav-item">
+                <NavLink className="nav-link" to="/form">
                   Home
                 </NavLink>
               </li>
               <li className="nav-item">
-                <NavLink className="nav-link" to="/form">
-                  New
-                </NavLink>
-              </li>
-              <li className="nav-item">
                 <NavLink className="nav-link" to="/list">
-                  All
+                  All Recipes
                 </NavLink>
               </li>
             </ul>

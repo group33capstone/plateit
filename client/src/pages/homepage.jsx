@@ -1,11 +1,9 @@
 import React, { useState } from "react";
 import { generateText, buildSavePayload } from "../utilities/geminiAPI";
-import Markdown from "react-markdown";
+import ReactMarkdown from "react-markdown";
 
 export default function App() {
-  // We only need the markdown value here; the setter was unused and triggered
-  // lint/runtime complaints in some environments. Destructure only the value.
-  const [markdown] = useState("");
+  // markdown state was unused here; remove to avoid lint/runtime warnings
   const [query, setQuery] = useState(""); // Used as 'question' for the API
   const [filters, setFilters] = useState({
     vegan: false,
@@ -249,7 +247,9 @@ export default function App() {
                             role="status"
                             aria-hidden="true"
                           ></span>
-                          Generating...
+                          Sending your ingredients to Gemini LLM with a prompt
+                          to return a structured recipe as well as markdown for
+                          the frontend...
                         </>
                       ) : (
                         "Generate Recipe"
@@ -285,11 +285,23 @@ export default function App() {
                             : "text-bg-warning"
                         }`}
                       >
-                        <Markdown>{markdown}</Markdown>
+                        {/* <Markdown>{markdown}</Markdown> */}
                       </span>
                     )}
                   </div>
-
+                  <div className="mt-3">
+                    {structuredResult?.raw_markdown ? (
+                      <div className="structured-markdown">
+                        <ReactMarkdown>
+                          {structuredResult.raw_markdown}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <pre className="structured-markdown">
+                        {JSON.stringify(structuredResult, null, 2)}
+                      </pre>
+                    )}
+                  </div>
                   <div className="mt-3">
                     <pre className="bg-light p-3 rounded small">
                       {JSON.stringify(structuredResult, null, 2)}
@@ -302,10 +314,10 @@ export default function App() {
                       disabled={!savePayload || textBusy}
                       onClick={handleSaveRecipe}
                     >
-                      Save Recipe
+                      Save structured response to database
                     </button>
 
-                    <button
+                    {/* <button
                       className="btn btn-outline-secondary btn-sm"
                       onClick={() =>
                         copyToClipboard(
@@ -314,7 +326,7 @@ export default function App() {
                       }
                     >
                       Copy JSON
-                    </button>
+                    </button> */}
                   </div>
                 </div>
               </div>
