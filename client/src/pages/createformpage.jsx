@@ -58,14 +58,21 @@ export default function FormPage() {
 
   return (
     <div className="container my-4">
+      <div className="text-center mb-5">
+        <h1 id="title" className="display-4">
+          PlateIt
+        </h1>
+        <h3 id="tagline" className="mt-2 fs-5 text-muted">
+          Need ideas or a recipe for your meal?
+        </h3>
+        <div id="quote" className="mt-4 fs-4">
+          <h4 className="fw-medium text-body">Type it</h4>
+          <h4 className="text-muted">Follow the recipe</h4>
+          <h4 className="fw-medium text-body">Plate it</h4>
+        </div>
+      </div>
       <div className="row justify-content-center">
         <div className="col-lg-8">
-          <h2 className="mb-3">Input your Ingredients</h2>
-          <p className="text-muted">
-            Enter ingredients (e.g., <em>eggs, tomatoes, pasta</em>) and choose
-            a Gemini model. We’ll generate a structured recipe you can save.
-          </p>
-
           {/* Error alert */}
           {error && (
             <div className="alert alert-danger" role="alert">
@@ -158,7 +165,9 @@ export default function FormPage() {
                           role="status"
                           aria-hidden="true"
                         />
-                        Thinking…
+                        Sending your ingredients to Gemini LLM with a prompt to
+                        return a structured recipe as well as markdown for the
+                        frontend...
                       </>
                     ) : (
                       "Generate Recipe"
@@ -190,19 +199,7 @@ export default function FormPage() {
             <div className="card shadow-sm">
               <div className="card-body">
                 <div className="structured-header">
-                  <strong>Structured response</strong>
-                  {saveStatus && (
-                    <span
-                      className={
-                        "badge " +
-                        (String(saveStatus).startsWith("ok")
-                          ? "text-bg-success"
-                          : "text-bg-warning")
-                      }
-                    >
-                      {saveStatus}
-                    </span>
-                  )}
+                  <strong>Generated Recipe</strong>
                 </div>
 
                 <div className="mt-3">
@@ -220,7 +217,7 @@ export default function FormPage() {
                   )}
                 </div>
 
-                <div className="mt-3 structured-actions">
+                <div className="mt-3 structured-actions d-flex align-items-center">
                   <button
                     className="btn btn-success"
                     disabled={!savePayload}
@@ -279,8 +276,21 @@ export default function FormPage() {
                       }
                     }}
                   >
-                    Save as recipe
+                    Save structured response to database
                   </button>
+
+                  {saveStatus && (
+                    <span
+                      className={
+                        "badge ms-3 " +
+                        (String(saveStatus).startsWith("ok")
+                          ? "text-bg-success"
+                          : "text-bg-warning")
+                      }
+                    >
+                      {saveStatus}
+                    </span>
+                  )}
 
                   <button
                     className="btn btn-outline-secondary"
