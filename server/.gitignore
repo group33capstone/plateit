@@ -22,3 +22,42 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Ignore dotenv files and environment configs (do not commit secrets)
+.env
+.env.*
+*.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.local.env
+*.env.backup
+
+# Ignore common secret/key/cert files
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+id_rsa.pub
+
+# Ignore files that may contain secrets or API keys
+*secret*
+*password*
+*passwd*
+*credentials*
+*.token
+*.api_key
+*API_KEY*
+*.vault
+
+# NPM/Yarn lock backups and local IDE credential files
+.npmrc
+.yarnrc
+.npm-debug.log*
+.yarn-debug.log*
+.yarn-error.log*
